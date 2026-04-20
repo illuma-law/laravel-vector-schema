@@ -27,33 +27,64 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
     {
         $this->registerGrammarMacros();
 
-        Blueprint::macro('vectorColumn', function (string $column, int $dimensions): ColumnDefinition {
-            /** @var Blueprint $self */
+        /** @var mixed $blueprintClass */
+        $blueprintClass = Blueprint::class;
+        $blueprintClass::macro('vectorColumn', function (string $column, int $dimensions): ColumnDefinition {
+            /** @var mixed $self */
             $self = $this;
-            $driver = DB::connection()->getDriverName();
+            if (! $self instanceof Blueprint) {
+                /** @var ColumnDefinition $dummy */
+                $dummy = new class extends ColumnDefinition {};
+
+                return $dummy;
+            }
+
+            /** @var string $driver */
+            $driver = (string) DB::connection()->getDriverName();
 
             if (in_array($driver, ['pgsql', 'mysql', 'mariadb', 'sqlsrv'])) {
-                return $self->addColumn('vectorWithDimensions', $column)->dimensions($dimensions);
+                /** @var ColumnDefinition $def */
+                $def = $self->addColumn('vectorWithDimensions', $column, compact('dimensions'));
+
+                return $def;
             }
 
             if ($driver === 'singlestore') {
-                return $self->addColumn('vector', $column, ['length' => $dimensions]);
+                /** @var ColumnDefinition $res */
+                $res = $self->addColumn('vector', $column, ['length' => $dimensions]);
+                return $res;
             }
 
-            return $self->binary($column);
+            /** @var ColumnDefinition $res */
+            $res = $self->binary($column);
+            return $res;
         });
 
-        Blueprint::macro('hnswIndex', function (string $column, int $m = 16, int $efConstruction = 64): void {
+        $blueprintClass::macro('hnswIndex', function (string $column, int $m = 16, int $efConstruction = 64): void {
             /** @var mixed $self */
             $self = $this;
-            $table = $self->table;
+            if (! $self instanceof Blueprint) {
+                return;
+            }
+
+            /** @var mixed $tableProp */
+            $tableProp = (new \ReflectionClass($self))->getProperty('table')->getValue($self);
+            /** @var string $table */
+            $table = (string) $tableProp;
             VectorSchema::createHnswIndex($table, $column, $m, $efConstruction);
         });
 
-        Blueprint::macro('dropHnswIndex', function (string $column): void {
+        $blueprintClass::macro('dropHnswIndex', function (string $column): void {
             /** @var mixed $self */
             $self = $this;
-            $table = $self->table;
+            if (! $self instanceof Blueprint) {
+                return;
+            }
+
+            /** @var mixed $tableProp */
+            $tableProp = (new \ReflectionClass($self))->getProperty('table')->getValue($self);
+            /** @var string $table */
+            $table = (string) $tableProp;
             VectorSchema::dropHnswIndex($table, $column);
         });
 
@@ -74,8 +105,12 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
 
         foreach ($grammars as $grammar) {
             if (class_exists($grammar)) {
+                /** @var mixed $grammar */
                 $grammar::macro('typeVectorWithDimensions', function ($column) {
-                    return "vector({$column->dimensions})";
+                    /** @var mixed $column */
+                    $dimensions = isset($column->dimensions) ? (string) $column->dimensions : '0';
+
+                    return "vector({$dimensions})";
                 });
             }
         }
@@ -83,108 +118,161 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
 
     private function registerSelectHybridVectorDistanceMacro(): void
     {
-        Builder::macro('selectHybridVectorDistance', function (string $column, array $vector, ?string $as = null): Builder {
+        /** @var mixed $builderClass */
+        $builderClass = Builder::class;
+        $builderClass::macro('selectHybridVectorDistance', function (string $column, array $vector, ?string $as = null): Builder {
             /** @var mixed $self */
             $self = $this;
-            $driver = $self->getConnection()->getDriverName();
+            if (! $self instanceof Builder) {
+                /** @var Builder $dummy */
+                $dummy = DB::table('dummy');
+
+                return $dummy;
+            }
+
+            /** @var string $driver */
+            $driver = (string) $self->getConnection()->getDriverName();
             $alias = $as ?? "{$column}_distance";
 
             if ($driver === 'sqlite') {
                 $vectorBlob = VectorHelper::toBlob($vector);
                 $self->addBinding($vectorBlob, 'select');
 
-                return $self->addSelect([
-                    $self->raw("vec_distance_cosine({$self->getGrammar()->wrap($column)}, ?) as {$self->getGrammar()->wrap($alias)}"),
+                /** @var mixed $grammar */
+                $grammar = $self->getGrammar();
+
+                /** @var Builder $res */
+                $res = $self->addSelect([
+                    $self->raw("vec_distance_cosine({$grammar->wrap($column)}, ?) as {$grammar->wrap($alias)}"),
                 ]);
+                return $res;
             }
 
             if ($driver === 'mysql') {
-                return $self->addSelect([
-                    $self->raw("VECTOR_DISTANCE({$self->getGrammar()->wrap($column)}, STRING_TO_VECTOR(?), 'COSINE') as {$self->getGrammar()->wrap($alias)}", [json_encode($vector)]),
+                /** @var mixed $grammar */
+                $grammar = $self->getGrammar();
+
+                /** @var Builder $res */
+                $res = $self->addSelect([
+                    $self->raw("VECTOR_DISTANCE({$grammar->wrap($column)}, STRING_TO_VECTOR(?), 'COSINE') as {$grammar->wrap($alias)}", [json_encode($vector)]),
                 ]);
+                return $res;
             }
 
             if ($driver === 'mariadb') {
-                return $self->addSelect([
-                    $self->raw("VEC_DISTANCE_COSINE({$self->getGrammar()->wrap($column)}, VEC_FromText(?)) as {$self->getGrammar()->wrap($alias)}", [json_encode($vector)]),
+                /** @var mixed $grammar */
+                $grammar = $self->getGrammar();
+
+                /** @var Builder $res */
+                $res = $self->addSelect([
+                    $self->raw("VEC_DISTANCE_COSINE({$grammar->wrap($column)}, VEC_FromText(?)) as {$grammar->wrap($alias)}", [json_encode($vector)]),
                 ]);
+                return $res;
             }
 
             if ($driver === 'sqlsrv') {
-                return $self->addSelect([
-                    $self->raw("VECTOR_DISTANCE('cosine', {$self->getGrammar()->wrap($column)}, ?) as {$self->getGrammar()->wrap($alias)}", [json_encode($vector)]),
+                /** @var mixed $grammar */
+                $grammar = $self->getGrammar();
+
+                /** @var Builder $res */
+                $res = $self->addSelect([
+                    $self->raw("VECTOR_DISTANCE('cosine', {$grammar->wrap($column)}, ?) as {$grammar->wrap($alias)}", [json_encode($vector)]),
                 ]);
+                return $res;
             }
 
             if ($driver === 'singlestore') {
-                return $self->addSelect([
-                    $self->raw("1 - DOT_PRODUCT({$self->getGrammar()->wrap($column)}, JSON_ARRAY_PACK(?)) as {$self->getGrammar()->wrap($alias)}", [json_encode($vector)]),
+                /** @var mixed $grammar */
+                $grammar = $self->getGrammar();
+
+                /** @var Builder $res */
+                $res = $self->addSelect([
+                    $self->raw("1 - DOT_PRODUCT({$grammar->wrap($column)}, JSON_ARRAY_PACK(?)) as {$grammar->wrap($alias)}", [json_encode($vector)]),
                 ]);
+                return $res;
             }
 
-            $vectorLiteral = '['.implode(',', $vector).']';
+            $vectorLiteral = '['.implode(',', array_map(fn ($v) => (string) $v, $vector)).']';
 
-            return $self->addSelect([
-                $self->raw("{$column} <=> '{$vectorLiteral}'::vector as {$self->getGrammar()->wrap($alias)}"),
+            /** @var mixed $grammar */
+            $grammar = $self->getGrammar();
+
+            /** @var Builder $res */
+            $res = $self->addSelect([
+                $self->raw("{$column} <=> '{$vectorLiteral}'::vector as {$grammar->wrap($alias)}"),
             ]);
+            return $res;
         });
     }
 
     private function registerWhereHybridVectorSimilarToMacro(): void
     {
-        Builder::macro('whereHybridVectorSimilarTo', function (string $column, array $vector, float $minSimilarity = 0.6, bool $order = true): Builder {
+        /** @var mixed $builderClass */
+        $builderClass = Builder::class;
+        $builderClass::macro('whereHybridVectorSimilarTo', function (string $column, array $vector, float $minSimilarity = 0.6, bool $order = true): Builder {
             /** @var mixed $self */
             $self = $this;
-            $driver = $self->getConnection()->getDriverName();
+            if (! $self instanceof Builder) {
+                /** @var Builder $dummy */
+                $dummy = DB::table('dummy');
+
+                return $dummy;
+            }
+
+            /** @var string $driver */
+            $driver = (string) $self->getConnection()->getDriverName();
             $maxDistance = 1 - $minSimilarity;
+
+            /** @var mixed $grammar */
+            $grammar = $self->getGrammar();
 
             if ($driver === 'sqlite') {
                 $vectorBlob = VectorHelper::toBlob($vector);
-                $self->whereRaw("vec_distance_cosine({$self->getGrammar()->wrap($column)}, ?) <= ?", [$vectorBlob, $maxDistance]);
+                $self->whereRaw("vec_distance_cosine({$grammar->wrap($column)}, ?) <= ?", [$vectorBlob, $maxDistance]);
                 if ($order) {
-                    $self->orderByRaw("vec_distance_cosine({$self->getGrammar()->wrap($column)}, ?)", [$vectorBlob]);
+                    $self->orderByRaw("vec_distance_cosine({$grammar->wrap($column)}, ?)", [$vectorBlob]);
                 }
 
                 return $self;
             }
 
             if ($driver === 'mysql') {
-                $self->whereRaw("VECTOR_DISTANCE({$self->getGrammar()->wrap($column)}, STRING_TO_VECTOR(?), 'COSINE') <= ?", [json_encode($vector), $maxDistance]);
+                $self->whereRaw("VECTOR_DISTANCE({$grammar->wrap($column)}, STRING_TO_VECTOR(?), 'COSINE') <= ?", [json_encode($vector), $maxDistance]);
                 if ($order) {
-                    $self->orderByRaw("VECTOR_DISTANCE({$self->getGrammar()->wrap($column)}, STRING_TO_VECTOR(?), 'COSINE')", [json_encode($vector)]);
+                    $self->orderByRaw("VECTOR_DISTANCE({$grammar->wrap($column)}, STRING_TO_VECTOR(?), 'COSINE')", [json_encode($vector)]);
                 }
 
                 return $self;
             }
 
             if ($driver === 'mariadb') {
-                $self->whereRaw("VEC_DISTANCE_COSINE({$self->getGrammar()->wrap($column)}, VEC_FromText(?)) <= ?", [json_encode($vector), $maxDistance]);
+                $self->whereRaw("VEC_DISTANCE_COSINE({$grammar->wrap($column)}, VEC_FromText(?)) <= ?", [json_encode($vector), $maxDistance]);
                 if ($order) {
-                    $self->orderByRaw("VEC_DISTANCE_COSINE({$self->getGrammar()->wrap($column)}, VEC_FromText(?))", [json_encode($vector)]);
+                    $self->orderByRaw("VEC_DISTANCE_COSINE({$grammar->wrap($column)}, VEC_FromText(?))", [json_encode($vector)]);
                 }
 
                 return $self;
             }
 
             if ($driver === 'sqlsrv') {
-                $self->whereRaw("VECTOR_DISTANCE('cosine', {$self->getGrammar()->wrap($column)}, ?) <= ?", [json_encode($vector), $maxDistance]);
+                $self->whereRaw("VECTOR_DISTANCE('cosine', {$grammar->wrap($column)}, ?) <= ?", [json_encode($vector), $maxDistance]);
                 if ($order) {
-                    $self->orderByRaw("VECTOR_DISTANCE('cosine', {$self->getGrammar()->wrap($column)}, ?)", [json_encode($vector)]);
+                    $self->orderByRaw("VECTOR_DISTANCE('cosine', {$grammar->wrap($column)}, ?)", [json_encode($vector)]);
                 }
 
                 return $self;
             }
 
             if ($driver === 'singlestore') {
-                $self->whereRaw("DOT_PRODUCT({$self->getGrammar()->wrap($column)}, JSON_ARRAY_PACK(?)) >= ?", [json_encode($vector), $minSimilarity]);
+                $self->whereRaw("DOT_PRODUCT({$grammar->wrap($column)}, JSON_ARRAY_PACK(?)) >= ?", [json_encode($vector), $minSimilarity]);
                 if ($order) {
-                    $self->orderByRaw("DOT_PRODUCT({$self->getGrammar()->wrap($column)}, JSON_ARRAY_PACK(?)) DESC", [json_encode($vector)]);
+                    $self->orderByRaw("DOT_PRODUCT({$grammar->wrap($column)}, JSON_ARRAY_PACK(?)) DESC", [json_encode($vector)]);
                 }
 
                 return $self;
             }
 
-            $vectorLiteral = '['.implode(',', $vector).']';
+            $vectorLiteral = '['.implode(',', array_map(fn ($v) => (string) $v, $vector)).']';
             $self->whereRaw("{$column} <=> '{$vectorLiteral}'::vector <= ?", [$maxDistance]);
             if ($order) {
                 $self->orderByRaw("{$column} <=> '{$vectorLiteral}'::vector");
@@ -196,75 +284,125 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
 
     private function registerWhereHybridVectorDistanceLessThanMacro(): void
     {
-        Builder::macro('whereHybridVectorDistanceLessThan', function (string $column, array $vector, float $maxDistance, string $boolean = 'and'): Builder {
+        /** @var mixed $builderClass */
+        $builderClass = Builder::class;
+        $builderClass::macro('whereHybridVectorDistanceLessThan', function (string $column, array $vector, float $maxDistance, string $boolean = 'and'): Builder {
             /** @var mixed $self */
             $self = $this;
-            $driver = $self->getConnection()->getDriverName();
+            if (! $self instanceof Builder) {
+                /** @var Builder $dummy */
+                $dummy = DB::table('dummy');
+
+                return $dummy;
+            }
+
+            /** @var string $driver */
+            $driver = (string) $self->getConnection()->getDriverName();
             $method = $boolean === 'or' ? 'orWhereRaw' : 'whereRaw';
+
+            /** @var mixed $grammar */
+            $grammar = $self->getGrammar();
 
             if ($driver === 'sqlite') {
                 $vectorBlob = VectorHelper::toBlob($vector);
 
-                return $self->{$method}("vec_distance_cosine({$self->getGrammar()->wrap($column)}, ?) < ?", [$vectorBlob, $maxDistance]);
+                /** @var Builder $res */
+                $res = $self->{$method}("vec_distance_cosine({$grammar->wrap($column)}, ?) < ?", [$vectorBlob, $maxDistance]);
+                return $res;
             }
 
             if ($driver === 'mysql') {
-                return $self->{$method}("VECTOR_DISTANCE({$self->getGrammar()->wrap($column)}, STRING_TO_VECTOR(?), 'COSINE') < ?", [json_encode($vector), $maxDistance]);
+                /** @var Builder $res */
+                $res = $self->{$method}("VECTOR_DISTANCE({$grammar->wrap($column)}, STRING_TO_VECTOR(?), 'COSINE') < ?", [json_encode($vector), $maxDistance]);
+                return $res;
             }
 
             if ($driver === 'mariadb') {
-                return $self->{$method}("VEC_DISTANCE_COSINE({$self->getGrammar()->wrap($column)}, VEC_FromText(?)) < ?", [json_encode($vector), $maxDistance]);
+                /** @var Builder $res */
+                $res = $self->{$method}("VEC_DISTANCE_COSINE({$grammar->wrap($column)}, VEC_FromText(?)) < ?", [json_encode($vector), $maxDistance]);
+                return $res;
             }
 
             if ($driver === 'sqlsrv') {
-                return $self->{$method}("VECTOR_DISTANCE('cosine', {$self->getGrammar()->wrap($column)}, ?) < ?", [json_encode($vector), $maxDistance]);
+                /** @var Builder $res */
+                $res = $self->{$method}("VECTOR_DISTANCE('cosine', {$grammar->wrap($column)}, ?) < ?", [json_encode($vector), $maxDistance]);
+                return $res;
             }
 
             if ($driver === 'singlestore') {
-                return $self->{$method}("1 - DOT_PRODUCT({$self->getGrammar()->wrap($column)}, JSON_ARRAY_PACK(?)) < ?", [json_encode($vector), $maxDistance]);
+                /** @var Builder $res */
+                $res = $self->{$method}("1 - DOT_PRODUCT({$grammar->wrap($column)}, JSON_ARRAY_PACK(?)) < ?", [json_encode($vector), $maxDistance]);
+                return $res;
             }
 
-            $vectorLiteral = '['.implode(',', $vector).']';
+            $vectorLiteral = '['.implode(',', array_map(fn ($v) => (string) $v, $vector)).']';
 
-            return $self->{$method}("{$column} <=> '{$vectorLiteral}'::vector < ?", [$maxDistance]);
+            /** @var Builder $res */
+            $res = $self->{$method}("{$column} <=> '{$vectorLiteral}'::vector < ?", [$maxDistance]);
+            return $res;
         });
     }
 
     private function registerOrderByHybridVectorDistanceMacro(): void
     {
-        Builder::macro('orderByHybridVectorDistance', function (string $column, array $vector, string $direction = 'asc'): Builder {
+        /** @var mixed $builderClass */
+        $builderClass = Builder::class;
+        $builderClass::macro('orderByHybridVectorDistance', function (string $column, array $vector, string $direction = 'asc'): Builder {
             /** @var mixed $self */
             $self = $this;
-            $driver = $self->getConnection()->getDriverName();
+            if (! $self instanceof Builder) {
+                /** @var Builder $dummy */
+                $dummy = DB::table('dummy');
+
+                return $dummy;
+            }
+
+            /** @var string $driver */
+            $driver = (string) $self->getConnection()->getDriverName();
             $dir = ($direction === 'desc' ? ' DESC' : '');
+
+            /** @var mixed $grammar */
+            $grammar = $self->getGrammar();
 
             if ($driver === 'sqlite') {
                 $vectorBlob = VectorHelper::toBlob($vector);
 
-                return $self->orderByRaw("vec_distance_cosine({$self->getGrammar()->wrap($column)}, ?)".$dir, [$vectorBlob]);
+                /** @var Builder $res */
+                $res = $self->orderByRaw("vec_distance_cosine({$grammar->wrap($column)}, ?)".$dir, [$vectorBlob]);
+                return $res;
             }
 
             if ($driver === 'mysql') {
-                return $self->orderByRaw("VECTOR_DISTANCE({$self->getGrammar()->wrap($column)}, STRING_TO_VECTOR(?), 'COSINE')".$dir, [json_encode($vector)]);
+                /** @var Builder $res */
+                $res = $self->orderByRaw("VECTOR_DISTANCE({$grammar->wrap($column)}, STRING_TO_VECTOR(?), 'COSINE')".$dir, [json_encode($vector)]);
+                return $res;
             }
 
             if ($driver === 'mariadb') {
-                return $self->orderByRaw("VEC_DISTANCE_COSINE({$self->getGrammar()->wrap($column)}, VEC_FromText(?))".$dir, [json_encode($vector)]);
+                /** @var Builder $res */
+                $res = $self->orderByRaw("VEC_DISTANCE_COSINE({$grammar->wrap($column)}, VEC_FromText(?))".$dir, [json_encode($vector)]);
+                return $res;
             }
 
             if ($driver === 'sqlsrv') {
-                return $self->orderByRaw("VECTOR_DISTANCE('cosine', {$self->getGrammar()->wrap($column)}, ?)".$dir, [json_encode($vector)]);
+                /** @var Builder $res */
+                $res = $self->orderByRaw("VECTOR_DISTANCE('cosine', {$grammar->wrap($column)}, ?)".$dir, [json_encode($vector)]);
+                return $res;
             }
 
             if ($driver === 'singlestore') {
                 $singlestoreDir = $direction === 'desc' ? ' ASC' : ' DESC';
 
-                return $self->orderByRaw("DOT_PRODUCT({$self->getGrammar()->wrap($column)}, JSON_ARRAY_PACK(?))".$singlestoreDir, [json_encode($vector)]);
+                /** @var Builder $res */
+                $res = $self->orderByRaw("DOT_PRODUCT({$grammar->wrap($column)}, JSON_ARRAY_PACK(?))".$singlestoreDir, [json_encode($vector)]);
+                return $res;
             }
 
-            $vectorLiteral = '['.implode(',', $vector).']';
+            $vectorLiteral = '['.implode(',', array_map(fn ($v) => (string) $v, $vector)).']';
 
-            return $self->orderByRaw("{$column} <=> '{$vectorLiteral}'::vector".$dir);
+            /** @var Builder $res */
+            $res = $self->orderByRaw("{$column} <=> '{$vectorLiteral}'::vector".$dir);
+            return $res;
         });
     }
 }

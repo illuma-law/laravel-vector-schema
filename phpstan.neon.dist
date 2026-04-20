@@ -2,28 +2,17 @@ includes:
     - phpstan-baseline.neon
 
 parameters:
-    level: 5
+    level: max
     paths:
         - src
+        - tests
+    excludePaths:
+        - tests/ArchTest.php
     tmpDir: build/phpstan
+    checkOctaneCompatibility: true
+    checkModelProperties: true
     reportUnmatchedIgnoredErrors: false
     ignoreErrors:
-        - '#PHPDoc tag @var with type .* is not subtype of native type \$this#'
-        - '#Call to an undefined static method Illuminate\\Database\\Schema\\Blueprint::macro\(\)#'
-        - '#Call to an undefined static method Illuminate\\Database\\Query\\Builder::macro\(\)#'
-        - '#Call to an undefined static method Illuminate\\Database\\Eloquent\\Builder::macro\(\)#'
-        - '#Call to an undefined method Illuminate\\Database\\Query\\Builder::getConnection\(\)#'
-        - '#Call to an undefined method Illuminate\\Database\\Query\\Builder::getGrammar\(\)#'
-        - '#Call to an undefined method Illuminate\\Database\\Query\\Builder::addBinding\(\)#'
-        - '#Call to an undefined method Illuminate\\Database\\Query\\Builder::addSelect\(\)#'
-        - '#Call to an undefined method Illuminate\\Database\\Query\\Builder::raw\(\)#'
-        - '#Call to an undefined method Illuminate\\Database\\Query\\Builder::whereRaw\(\)#'
-        - '#Call to an undefined method Illuminate\\Database\\Query\\Builder::orWhereRaw\(\)#'
-        - '#Call to an undefined method Illuminate\\Database\\Query\\Builder::orderByRaw\(\)#'
-        - '#Call to an undefined method Illuminate\\Database\\Query\\Builder::whereNot\(\)#'
-        - '#Call to an undefined method Illuminate\\Database\\Query\\Builder::whereFullText\(\)#'
-        - '#Call to an undefined method Illuminate\\Database\\Eloquent\\Builder::getQuery\(\)#'
-        - '#Call to an undefined method Illuminate\\Database\\Schema\\Blueprint::binary\(\)#'
-        - '#Call to an undefined method Illuminate\\Database\\Schema\\Blueprint::addColumn\(\)#'
-        - '#Access to an undefined property Illuminate\\Database\\Schema\\Blueprint::\$table#'
-        - '#Access to an undefined property Illuminate\\Database\\Query\\Builder::\$from#'
+        -
+            message: '#Access to an undefined property Pest\\PendingCalls\\TestCall::\$processor#'
+            path: tests/VectorProcessorTest.php

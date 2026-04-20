@@ -8,6 +8,19 @@ it('executes selectHybridVectorDistance macro', function () {
 
     $builder->selectHybridVectorDistance('embedding', $vector, 'dist');
     $sql = $builder->toSql();
+    $driver = DB::connection()->getDriverName();
 
-    expect($sql)->toContain('vec_distance_cosine');
+    if ($driver === 'sqlite') {
+        expect($sql)->toContain('vec_distance_cosine');
+    } elseif ($driver === 'mysql') {
+        expect($sql)->toContain('VECTOR_DISTANCE');
+    } elseif ($driver === 'mariadb') {
+        expect($sql)->toContain('VEC_DISTANCE_COSINE');
+    } elseif ($driver === 'sqlsrv') {
+        expect($sql)->toContain('VECTOR_DISTANCE');
+    } elseif ($driver === 'singlestore') {
+        expect($sql)->toContain('DOT_PRODUCT');
+    } else {
+        expect($sql)->toContain('<=>');
+    }
 });

@@ -24,7 +24,9 @@ function getMockBuilder(string $driver)
     $connection = Mockery::mock(Connection::class);
     $connection->shouldReceive('getDriverName')->andReturn($driver);
     $connection->shouldReceive('getTablePrefix')->andReturn('');
-    $connection->shouldReceive('raw')->andReturnUsing(fn ($value) => new Expression($value));
+    $connection->shouldReceive('raw')->andReturnUsing(function ($value) {
+        return new Expression((string) (is_scalar($value) ? $value : ''));
+    });
     $connection->shouldReceive('addBinding');
     $grammar = match ($driver) {
         'sqlite' => new SQLiteGrammar($connection),

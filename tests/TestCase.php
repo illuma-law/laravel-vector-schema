@@ -61,11 +61,11 @@ class TestCase extends Orchestra
 
         config()->set('database.connections.pgsql', [
             'driver' => 'pgsql',
-            'host' => '127.0.0.1',
-            'port' => '5432',
-            'database' => 'testing',
-            'username' => 'postgres',
-            'password' => 'password',
+            'host' => env('DB_HOST', '127.0.0.1'),
+            'port' => env('DB_PORT', '5432'),
+            'database' => env('DB_DATABASE', 'testing'),
+            'username' => env('DB_USERNAME', 'postgres'),
+            'password' => env('DB_PASSWORD', 'password'),
             'charset' => 'utf8',
             'prefix' => '',
             'schema' => 'public',

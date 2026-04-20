@@ -1,0 +1,22 @@
+name: test-temp
+on: push
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: [8.4]
+        laravel: [12.*]
+        testbench: [10.*]
+        stability: [prefer-stable]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+      - name: Install dependencies
+        run: |
+          composer require "laravel/framework:${{ matrix.laravel }}" --no-interaction --no-update --ignore-platform-req=php
+          composer require "orchestra/testbench:${{ matrix.testbench }}" --dev --no-interaction --no-update --ignore-platform-req=php
+          composer update --${{ matrix.stability }} --prefer-dist --no-interaction --ignore-platform-req=php

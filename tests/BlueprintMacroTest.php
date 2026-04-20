@@ -8,7 +8,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 it('registers the vectorColumn macro on blueprint', function () {
-    expect(Blueprint::hasMacro('vectorColumn'))->toBeTrue();
+    /** @var mixed $blueprintClass */
+    $blueprintClass = Blueprint::class;
+    expect($blueprintClass::hasMacro('vectorColumn'))->toBe(true);
 });
 
 it('can create a vector column in a migration on sqlite', function () {
@@ -17,7 +19,7 @@ it('can create a vector column in a migration on sqlite', function () {
         $table->vectorColumn('embedding', 1536);
     });
 
-    expect(Schema::hasColumn('test_vectors_sqlite', 'embedding'))->toBeTrue();
+    expect(Schema::hasColumn('test_vectors_sqlite', 'embedding'))->toBe(true);
 });
 
 it('uses vectorWithDimensions type for pgsql, mysql, mariadb, sqlsrv', function (string $driver) {
@@ -25,11 +27,13 @@ it('uses vectorWithDimensions type for pgsql, mysql, mariadb, sqlsrv', function 
     Config::set("database.connections.{$driver}.driver", $driver);
     Config::set("database.connections.{$driver}.database", 'test');
 
+    /** @var Connection&\Mockery\MockInterface $connection */
     $connection = Mockery::mock(Connection::class);
     $connection->shouldReceive('getDriverName')->andReturn($driver);
     $connection->shouldReceive('getSchemaGrammar')->andReturn(new PostgresGrammar($connection));
 
     $blueprint = new Blueprint($connection, 'test_table');
+    /** @var mixed $column */
     $column = $blueprint->vectorColumn('embedding', 1536);
 
     expect($column->type)->toBe('vectorWithDimensions');
@@ -42,6 +46,7 @@ it('uses vector type for singlestore', function () {
     Config::set("database.connections.{$driver}.driver", $driver);
     Config::set("database.connections.{$driver}.database", 'test');
 
+    /** @var Connection&\Mockery\MockInterface $connection */
     $connection = Mockery::mock(Connection::class);
     $connection->shouldReceive('getDriverName')->andReturn($driver);
     $connection->shouldReceive('getSchemaGrammar')->andReturn(new PostgresGrammar($connection));
@@ -49,6 +54,7 @@ it('uses vector type for singlestore', function () {
     DB::shouldReceive('connection')->andReturn($connection);
 
     $blueprint = new Blueprint($connection, 'test_table');
+    /** @var mixed $column */
     $column = $blueprint->vectorColumn('embedding', 1536);
 
     expect($column->type)->toBe('vector');
@@ -62,7 +68,7 @@ it('can call hnswIndex macro', function () {
         $table->hnswIndex('embedding');
     });
 
-    expect(true)->toBeTrue();
+    expect(true)->toBe(true);
 });
 
 it('can call dropHnswIndex macro', function () {
@@ -70,5 +76,5 @@ it('can call dropHnswIndex macro', function () {
         $table->dropHnswIndex('embedding');
     });
 
-    expect(true)->toBeTrue();
+    expect(true)->toBe(true);
 });

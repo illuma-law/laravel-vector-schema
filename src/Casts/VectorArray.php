@@ -9,8 +9,15 @@ use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
 use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;
 
+/**
+ * @implements CastsAttributes<array<int, float>|null, array<int, float>|null>
+ */
 class VectorArray implements CastsAttributes
 {
+    /**
+     * @param  array<string, mixed>  $attributes
+     * @return array<int, float>|null
+     */
     public function get(Model $model, string $key, mixed $value, array $attributes): ?array
     {
         if ($value === null) {
@@ -52,7 +59,7 @@ class VectorArray implements CastsAttributes
                     if (count($vector) > 0) {
                         if (! $isProbablyBinary) {
                             foreach ($vector as $val) {
-                                if (abs($val) > 1e10 || (abs($val) < 1e-10 && $val != 0)) {
+                                if (abs((float) $val) > 1e10 || (abs((float) $val) < 1e-10 && $val != 0)) {
                                     return null;
                                 }
                             }
@@ -68,6 +75,12 @@ class VectorArray implements CastsAttributes
         return null;
     }
 
+    /**
+     * @param  Model  $model
+     * @param  string  $key
+     * @param  mixed  $value
+     * @param  array<string, mixed>  $attributes
+     */
     public function set(Model $model, string $key, mixed $value, array $attributes): mixed
     {
         if ($value === null) {
@@ -75,9 +88,7 @@ class VectorArray implements CastsAttributes
         }
 
         if (! is_array($value)) {
-            throw new InvalidArgumentException(
-                "The {$key} attribute must be an array of floats."
-            );
+            throw new InvalidArgumentException("The {$key} attribute must be an array of floats.");
         }
 
         $vector = $this->validateVector($value);
@@ -100,11 +111,15 @@ class VectorArray implements CastsAttributes
         return $vector;
     }
 
+    /**
+     * @param  array<mixed, mixed>  $vector
+     * @return array<int, float>
+     */
     private function validateVector(array $vector): array
     {
-        return array_map(
+        return array_values(array_map(
             fn ($v) => is_numeric($v) ? (float) $v : 0.0,
             $vector
-        );
+        ));
     }
 }
