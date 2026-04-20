@@ -38,6 +38,7 @@ jobs:
           - php: 8.4
             laravel: 12.*
             testbench: 10.*
+            stability: prefer-stable
             database: sqlite
             os: ubuntu-latest
         exclude:
@@ -91,9 +92,9 @@ jobs:
 
       - name: Install dependencies
         run: |
-          composer require "laravel/framework:${{ matrix.laravel }}" --no-interaction --no-update --ignore-platform-req=php
-          composer require "orchestra/testbench:${{ matrix.testbench }}" --dev --no-interaction --no-update --ignore-platform-req=php
-          composer update --${{ matrix.stability }} --prefer-dist --no-interaction --ignore-platform-req=php
+          composer require "laravel/framework:${{ matrix.laravel }}" --no-interaction --no-update --ignore-platform-reqs
+          composer require "orchestra/testbench:${{ matrix.testbench }}" --dev --no-interaction --no-update --ignore-platform-reqs
+          composer update --${{ matrix.stability }} --prefer-dist --no-interaction --ignore-platform-reqs
 
       - name: Install sqlite-vec (Linux)
         if: matrix.os == 'ubuntu-latest'
