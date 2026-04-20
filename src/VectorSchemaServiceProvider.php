@@ -7,6 +7,11 @@ namespace IllumaLaw\VectorSchema;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Schema\ColumnDefinition;
+use Illuminate\Database\Schema\Grammars\MariaDbGrammar;
+use Illuminate\Database\Schema\Grammars\MySqlGrammar;
+use Illuminate\Database\Schema\Grammars\PostgresGrammar;
+use Illuminate\Database\Schema\Grammars\SqlServerGrammar;
+use Illuminate\Support\Facades\DB;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -25,7 +30,7 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
         Blueprint::macro('vectorColumn', function (string $column, int $dimensions): ColumnDefinition {
             /** @var Blueprint $self */
             $self = $this;
-            $driver = \Illuminate\Support\Facades\DB::connection()->getDriverName();
+            $driver = DB::connection()->getDriverName();
 
             if (in_array($driver, ['pgsql', 'mysql', 'mariadb', 'sqlsrv', 'singlestore'])) {
                 return $self->addColumn('vector', $column, ['length' => $dimensions]);
@@ -58,9 +63,9 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
     private function registerGrammarMacros(): void
     {
         $grammars = [
-            \Illuminate\Database\Schema\Grammars\PostgresGrammar::class,
-            \Illuminate\Database\Schema\Grammars\MySqlGrammar::class,
-            \Illuminate\Database\Schema\Grammars\MariaDbGrammar::class,
+            PostgresGrammar::class,
+            MySqlGrammar::class,
+            MariaDbGrammar::class,
         ];
 
         foreach ($grammars as $grammar) {
@@ -71,8 +76,8 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
             }
         }
 
-        if (class_exists(\Illuminate\Database\Schema\Grammars\SqlServerGrammar::class)) {
-            \Illuminate\Database\Schema\Grammars\SqlServerGrammar::macro('typeVector', function ($column) {
+        if (class_exists(SqlServerGrammar::class)) {
+            SqlServerGrammar::macro('typeVector', function ($column) {
                 return "vector({$column->length})";
             });
         }
