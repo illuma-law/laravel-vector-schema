@@ -4,6 +4,7 @@ use Illuminate\Database\Connection;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Schema\Grammars\PostgresGrammar;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 it('registers the vectorColumn macro on blueprint', function () {
@@ -45,7 +46,7 @@ it('uses vector type for singlestore', function () {
     $connection->shouldReceive('getDriverName')->andReturn($driver);
     $connection->shouldReceive('getSchemaGrammar')->andReturn(new PostgresGrammar($connection));
 
-    \Illuminate\Support\Facades\DB::shouldReceive('connection')->andReturn($connection);
+    DB::shouldReceive('connection')->andReturn($connection);
 
     $blueprint = new Blueprint($connection, 'test_table');
     $column = $blueprint->vectorColumn('embedding', 1536);
