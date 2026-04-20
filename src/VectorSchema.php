@@ -57,6 +57,7 @@ final class VectorSchema
         if (str_contains($connection, 'sqlite') || $connection === 'testing') {
             return 'sqlite';
         }
+
         return DB::connection()->getDriverName();
     }
 }

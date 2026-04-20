@@ -38,7 +38,7 @@ class VectorArray implements CastsAttributes
             // 2. Check for standard JSON representation
             // We only try this if it doesn't look like a potential blob (non-UTF8)
             $isProbablyBinary = ! mb_check_encoding($value, 'UTF-8');
-            
+
             if (! $isProbablyBinary) {
                 try {
                     $decoded = json_decode($value, true, 512, JSON_THROW_ON_ERROR);
@@ -59,10 +59,11 @@ class VectorArray implements CastsAttributes
                         if (! $isProbablyBinary) {
                             foreach ($vector as $val) {
                                 if (abs($val) > 1e10 || (abs($val) < 1e-10 && $val != 0)) {
-                                     return null;
+                                    return null;
                                 }
                             }
                         }
+
                         return $this->validateVector($vector);
                     }
                 } catch (\Throwable) {

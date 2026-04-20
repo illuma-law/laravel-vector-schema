@@ -1,18 +1,17 @@
 <?php
 
 use IllumaLaw\VectorSchema\VectorSchema;
+use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Config;
 
 it('ensures vector extension on postgres', function () {
-    $connection = Mockery::mock(\Illuminate\Database\Connection::class);
+    $connection = Mockery::mock(Connection::class);
     $connection->shouldReceive('getDriverName')->andReturn('pgsql');
-    
+
     $schemaBuilder = Mockery::mock();
     $schemaBuilder->shouldReceive('ensureVectorExtensionExists')->once();
     $connection->shouldReceive('getSchemaBuilder')->andReturn($schemaBuilder);
-    
+
     DB::shouldReceive('connection')->andReturn($connection);
     DB::shouldReceive('getDefaultConnection')->andReturn('pgsql');
 
@@ -20,13 +19,13 @@ it('ensures vector extension on postgres', function () {
 });
 
 it('does not ensure extension on other drivers', function () {
-    $connection = Mockery::mock(\Illuminate\Database\Connection::class);
+    $connection = Mockery::mock(Connection::class);
     $connection->shouldReceive('getDriverName')->andReturn('sqlite');
-    
+
     $schemaBuilder = Mockery::mock();
     $schemaBuilder->shouldNotReceive('ensureVectorExtensionExists');
     $connection->shouldReceive('getSchemaBuilder')->andReturn($schemaBuilder);
-    
+
     DB::shouldReceive('connection')->andReturn($connection);
     DB::shouldReceive('getDefaultConnection')->andReturn('sqlite');
 
@@ -34,12 +33,12 @@ it('does not ensure extension on other drivers', function () {
 });
 
 it('creates hnsw index on postgres', function () {
-    $connection = Mockery::mock(\Illuminate\Database\Connection::class);
+    $connection = Mockery::mock(Connection::class);
     $connection->shouldReceive('getDriverName')->andReturn('pgsql');
-    
+
     DB::shouldReceive('connection')->andReturn($connection);
     DB::shouldReceive('getDefaultConnection')->andReturn('pgsql');
-    
+
     DB::shouldReceive('statement')->once()->with(Mockery::on(function ($sql) {
         return str_contains($sql, 'CREATE INDEX test_table_embedding_hnsw_index ON test_table USING hnsw');
     }));
@@ -48,9 +47,9 @@ it('creates hnsw index on postgres', function () {
 });
 
 it('does not create hnsw index on other drivers', function () {
-    $connection = Mockery::mock(\Illuminate\Database\Connection::class);
+    $connection = Mockery::mock(Connection::class);
     $connection->shouldReceive('getDriverName')->andReturn('sqlite');
-    
+
     DB::shouldReceive('connection')->andReturn($connection);
     DB::shouldReceive('getDefaultConnection')->andReturn('sqlite');
 
@@ -60,9 +59,9 @@ it('does not create hnsw index on other drivers', function () {
 });
 
 it('drops hnsw index on postgres', function () {
-    $connection = Mockery::mock(\Illuminate\Database\Connection::class);
+    $connection = Mockery::mock(Connection::class);
     $connection->shouldReceive('getDriverName')->andReturn('pgsql');
-    
+
     DB::shouldReceive('connection')->andReturn($connection);
     DB::shouldReceive('getDefaultConnection')->andReturn('pgsql');
 
@@ -72,9 +71,9 @@ it('drops hnsw index on postgres', function () {
 });
 
 it('does not drop hnsw index on other drivers', function () {
-    $connection = Mockery::mock(\Illuminate\Database\Connection::class);
+    $connection = Mockery::mock(Connection::class);
     $connection->shouldReceive('getDriverName')->andReturn('sqlite');
-    
+
     DB::shouldReceive('connection')->andReturn($connection);
     DB::shouldReceive('getDefaultConnection')->andReturn('sqlite');
 

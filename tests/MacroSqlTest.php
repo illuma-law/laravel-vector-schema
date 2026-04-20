@@ -1,11 +1,14 @@
 <?php
 
+use Illuminate\Database\Connection;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Database\Query\Expression;
 use Illuminate\Database\Query\Grammars\Grammar;
-use Illuminate\Database\Query\Grammars\SQLiteGrammar;
 use Illuminate\Database\Query\Grammars\MySqlGrammar;
 use Illuminate\Database\Query\Grammars\PostgresGrammar;
+use Illuminate\Database\Query\Grammars\SQLiteGrammar;
 use Illuminate\Database\Query\Grammars\SqlServerGrammar;
+use Illuminate\Database\Query\Processors\Processor;
 
 dataset('drivers', [
     'sqlite',
@@ -13,36 +16,37 @@ dataset('drivers', [
     'mariadb',
     'sqlsrv',
     'singlestore',
-    'pgsql'
+    'pgsql',
 ]);
 
-function getMockBuilder(string $driver) {
-    $connection = Mockery::mock(\Illuminate\Database\Connection::class);
+function getMockBuilder(string $driver)
+{
+    $connection = Mockery::mock(Connection::class);
     $connection->shouldReceive('getDriverName')->andReturn($driver);
     $connection->shouldReceive('getTablePrefix')->andReturn('');
-    $connection->shouldReceive('raw')->andReturnUsing(fn($value) => new \Illuminate\Database\Query\Expression($value));
+    $connection->shouldReceive('raw')->andReturnUsing(fn ($value) => new Expression($value));
     $connection->shouldReceive('addBinding'); // Allow any binding calls
-    
-    $grammar = match($driver) {
+
+    $grammar = match ($driver) {
         'sqlite' => new SQLiteGrammar($connection),
         'mysql', 'mariadb', 'singlestore' => new MySqlGrammar($connection),
         'sqlsrv' => new SqlServerGrammar($connection),
         'pgsql' => new PostgresGrammar($connection),
         default => new Grammar($connection),
     };
-    
+
     $connection->shouldReceive('getQueryGrammar')->andReturn($grammar);
-    $connection->shouldReceive('getPostProcessor')->andReturn(Mockery::mock(\Illuminate\Database\Query\Processors\Processor::class));
-    
+    $connection->shouldReceive('getPostProcessor')->andReturn(Mockery::mock(Processor::class));
+
     return new Builder($connection, $grammar);
 }
 
 it('generates correct distance SQL for each driver', function (string $driver) {
     $builder = getMockBuilder($driver);
     $builder->from('test');
-    
+
     $vector = [0.1, 0.2, 0.3];
-    
+
     $builder->selectHybridVectorDistance('embedding', $vector, 'dist');
     $sql = $builder->toSql();
 
@@ -65,9 +69,9 @@ it('generates correct distance SQL for each driver', function (string $driver) {
 it('generates correct similarity where SQL for each driver', function (string $driver) {
     $builder = getMockBuilder($driver);
     $builder->from('test');
-    
+
     $vector = [0.1, 0.2, 0.3];
-    
+
     $builder->whereHybridVectorSimilarTo('embedding', $vector, 0.7);
     $sql = strtolower($builder->toSql());
 
@@ -95,9 +99,9 @@ it('generates correct similarity where SQL for each driver', function (string $d
 it('generates correct distance less than SQL for each driver', function (string $driver) {
     $builder = getMockBuilder($driver);
     $builder->from('test');
-    
+
     $vector = [0.1, 0.2, 0.3];
-    
+
     $builder->whereHybridVectorDistanceLessThan('embedding', $vector, 0.3);
     $sql = strtolower($builder->toSql());
 
@@ -119,9 +123,9 @@ it('generates correct distance less than SQL for each driver', function (string 
 it('generates correct order by distance SQL for each driver', function (string $driver) {
     $builder = getMockBuilder($driver);
     $builder->from('test');
-    
+
     $vector = [0.1, 0.2, 0.3];
-    
+
     $builder->orderByHybridVectorDistance('embedding', $vector, 'desc');
     $sql = strtolower($builder->toSql());
 

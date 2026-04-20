@@ -1,9 +1,10 @@
 <?php
 
+use Illuminate\Database\Connection;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Grammars\PostgresGrammar;
 use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 it('registers the vectorColumn macro on blueprint', function () {
     expect(Blueprint::hasMacro('vectorColumn'))->toBeTrue();
@@ -22,12 +23,12 @@ it('uses vector type for supported databases', function () {
     Config::set('database.default', 'pgsql');
     Config::set('database.connections.pgsql.driver', 'pgsql');
 
-    $connection = Mockery::mock(\Illuminate\Database\Connection::class);
-    $connection->shouldReceive('getSchemaGrammar')->andReturn(new \Illuminate\Database\Schema\Grammars\PostgresGrammar($connection));
-    
+    $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('getSchemaGrammar')->andReturn(new PostgresGrammar($connection));
+
     $blueprint = new Blueprint($connection, 'test_table');
     $column = $blueprint->vectorColumn('embedding', 1536);
-    
+
     expect($column->type)->toBe('vector');
     expect($column->length)->toBe(1536);
 });
@@ -38,7 +39,7 @@ it('can call hnswIndex macro', function () {
         $table->vectorColumn('embedding', 3);
         $table->hnswIndex('embedding');
     });
-    
+
     expect(true)->toBeTrue(); // If no exception, it's fine (it doesn't do anything on sqlite)
 });
 
@@ -46,6 +47,6 @@ it('can call dropHnswIndex macro', function () {
     Schema::table('test_hnsw', function (Blueprint $table) {
         $table->dropHnswIndex('embedding');
     });
-    
+
     expect(true)->toBeTrue();
 });

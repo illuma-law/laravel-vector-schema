@@ -2,6 +2,7 @@
 
 use IllumaLaw\VectorSchema\Casts\VectorArray;
 use IllumaLaw\VectorSchema\VectorHelper;
+use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Model;
 
 class TestVectorModel extends Model
@@ -62,7 +63,7 @@ it('validates vector if it is already an array in get', function () {
 it('handles invalid json string in get', function () {
     $cast = new VectorArray;
     $model = new TestVectorModel;
-    
+
     // String looks like PG vector but is invalid JSON
     $result = $cast->get($model, 'embedding', '[1.0, invalid]', []);
     expect($result)->toBeNull();
@@ -113,15 +114,15 @@ it('returns null for null value in set', function () {
 it('throws exception for non-array value in set', function () {
     $cast = new VectorArray;
     $model = new TestVectorModel;
-    
-    expect(fn() => $cast->set($model, 'embedding', 'not an array', []))
-        ->toThrow(InvalidArgumentException::class, "The embedding attribute must be an array of floats.");
+
+    expect(fn () => $cast->set($model, 'embedding', 'not an array', []))
+        ->toThrow(InvalidArgumentException::class, 'The embedding attribute must be an array of floats.');
 });
 
 it('returns raw vector for non-sqlite drivers in set', function () {
     $cast = new VectorArray;
     $model = Mockery::mock(TestVectorModel::class)->makePartial();
-    $connection = Mockery::mock(\Illuminate\Database\Connection::class);
+    $connection = Mockery::mock(Connection::class);
     $connection->shouldReceive('getDriverName')->andReturn('pgsql');
     $model->shouldReceive('getConnection')->andReturn($connection);
 
