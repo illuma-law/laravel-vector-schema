@@ -7,7 +7,6 @@ namespace IllumaLaw\VectorSchema;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Schema\ColumnDefinition;
-use IllumaLaw\VectorSchema\VectorHelper;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -62,6 +61,7 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
             if ($driver === 'sqlite') {
                 $vectorBlob = VectorHelper::toBlob($vector);
                 $this->addBinding($vectorBlob, 'select');
+
                 return $this->addSelect([
                     $this->raw("vec_distance_cosine({$this->grammar->wrap($column)}, ?) as {$this->grammar->wrap($alias)}"),
                 ]);
@@ -210,31 +210,31 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
             if ($driver === 'sqlite') {
                 $vectorBlob = VectorHelper::toBlob($vector);
 
-                return $this->orderByRaw("vec_distance_cosine({$this->grammar->wrap($column)}, ?)" . $dir, [$vectorBlob]);
+                return $this->orderByRaw("vec_distance_cosine({$this->grammar->wrap($column)}, ?)".$dir, [$vectorBlob]);
             }
 
             if ($driver === 'mysql') {
-                return $this->orderByRaw("VECTOR_DISTANCE({$this->grammar->wrap($column)}, STRING_TO_VECTOR(?), 'COSINE')" . $dir, [json_encode($vector)]);
+                return $this->orderByRaw("VECTOR_DISTANCE({$this->grammar->wrap($column)}, STRING_TO_VECTOR(?), 'COSINE')".$dir, [json_encode($vector)]);
             }
 
             if ($driver === 'mariadb') {
-                return $this->orderByRaw("VEC_DISTANCE_COSINE({$this->grammar->wrap($column)}, VEC_FromText(?))" . $dir, [json_encode($vector)]);
+                return $this->orderByRaw("VEC_DISTANCE_COSINE({$this->grammar->wrap($column)}, VEC_FromText(?))".$dir, [json_encode($vector)]);
             }
 
             if ($driver === 'sqlsrv') {
-                return $this->orderByRaw("VECTOR_DISTANCE('cosine', {$this->grammar->wrap($column)}, ?)" . $dir, [json_encode($vector)]);
+                return $this->orderByRaw("VECTOR_DISTANCE('cosine', {$this->grammar->wrap($column)}, ?)".$dir, [json_encode($vector)]);
             }
 
             if ($driver === 'singlestore') {
                 // ASC distance means DESC dot_product (similarity)
                 $singlestoreDir = $direction === 'desc' ? ' ASC' : ' DESC';
 
-                return $this->orderByRaw("DOT_PRODUCT({$this->grammar->wrap($column)}, JSON_ARRAY_PACK(?))" . $singlestoreDir, [json_encode($vector)]);
+                return $this->orderByRaw("DOT_PRODUCT({$this->grammar->wrap($column)}, JSON_ARRAY_PACK(?))".$singlestoreDir, [json_encode($vector)]);
             }
 
             $vectorLiteral = '['.implode(',', $vector).']';
 
-            return $this->orderByRaw("{$column} <=> '{$vectorLiteral}'::vector" . $dir);
+            return $this->orderByRaw("{$column} <=> '{$vectorLiteral}'::vector".$dir);
         });
     }
 }
