@@ -30,8 +30,8 @@ function getMockBuilder(string $driver)
         'sqlite' => new SQLiteGrammar($connection),
         'mysql', 'mariadb', 'singlestore' => new MySqlGrammar($connection),
         'sqlsrv' => new SqlServerGrammar($connection),
-        'pgsql'  => new PostgresGrammar($connection),
-        default  => new Grammar($connection),
+        'pgsql' => new PostgresGrammar($connection),
+        default => new Grammar($connection),
     };
 
     $connection->shouldReceive('getQueryGrammar')->andReturn($grammar);
