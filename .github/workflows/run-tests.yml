@@ -40,10 +40,6 @@ jobs:
             testbench: 10.*
             database: sqlite
             os: ubuntu-latest
-          - php: 8.5
-            laravel: 13.*
-            database: sqlite
-            os: windows-latest
         exclude:
           - php: 8.3
             laravel: 13.*
