@@ -24,7 +24,7 @@ class VectorArray implements CastsAttributes
         if (is_string($value)) {
             $trimmed = trim($value);
 
-            // 1. Check for PostgreSQL vector string representation: "[1,2,3]"
+            // 1. Check for PostgreSQL/MySQL/MariaDB vector string representation: "[1,2,3]"
             if (str_starts_with($trimmed, '[') && str_ends_with($trimmed, ']')) {
                 try {
                     $decoded = json_decode($trimmed, true, 512, JSON_THROW_ON_ERROR);
@@ -89,8 +89,18 @@ class VectorArray implements CastsAttributes
         $vector = $this->validateVector($value);
 
         $connection = $model->getConnection();
-        if ($connection->getDriverName() === 'sqlite') {
+        $driver = $connection->getDriverName();
+
+        if ($driver === 'sqlite') {
             return VectorHelper::toBlob($vector);
+        }
+
+        if ($driver === 'pgsql') {
+            return VectorHelper::toPostgresLiteral($vector);
+        }
+
+        if (in_array($driver, ['mysql', 'mariadb', 'sqlsrv', 'singlestore'])) {
+            return json_encode($vector);
         }
 
         return $vector;

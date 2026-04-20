@@ -20,11 +20,12 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
 
     public function bootingPackage(): void
     {
+        $this->registerGrammarMacros();
+
         Blueprint::macro('vectorColumn', function (string $column, int $dimensions): ColumnDefinition {
-            /** @var mixed $self */
+            /** @var Blueprint $self */
             $self = $this;
-            $driver = config('database.default');
-            $driver = config("database.connections.{$driver}.driver");
+            $driver = \Illuminate\Support\Facades\DB::connection()->getDriverName();
 
             if (in_array($driver, ['pgsql', 'mysql', 'mariadb', 'sqlsrv', 'singlestore'])) {
                 return $self->addColumn('vector', $column, ['length' => $dimensions]);
@@ -52,6 +53,29 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
         $this->registerWhereHybridVectorSimilarToMacro();
         $this->registerWhereHybridVectorDistanceLessThanMacro();
         $this->registerOrderByHybridVectorDistanceMacro();
+    }
+
+    private function registerGrammarMacros(): void
+    {
+        $grammars = [
+            \Illuminate\Database\Schema\Grammars\PostgresGrammar::class,
+            \Illuminate\Database\Schema\Grammars\MySqlGrammar::class,
+            \Illuminate\Database\Schema\Grammars\MariaDbGrammar::class,
+        ];
+
+        foreach ($grammars as $grammar) {
+            if (class_exists($grammar)) {
+                $grammar::macro('typeVector', function ($column) {
+                    return "vector({$column->length})";
+                });
+            }
+        }
+
+        if (class_exists(\Illuminate\Database\Schema\Grammars\SqlServerGrammar::class)) {
+            \Illuminate\Database\Schema\Grammars\SqlServerGrammar::macro('typeVector', function ($column) {
+                return "vector({$column->length})";
+            });
+        }
     }
 
     private function registerSelectHybridVectorDistanceMacro(): void
