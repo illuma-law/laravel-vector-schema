@@ -27,7 +27,11 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
             $self = $this;
             $driver = \Illuminate\Support\Facades\DB::connection()->getDriverName();
 
-            if (in_array($driver, ['pgsql', 'mysql', 'mariadb', 'sqlsrv', 'singlestore'])) {
+            if (in_array($driver, ['pgsql', 'mysql', 'mariadb', 'sqlsrv'])) {
+                return $self->addColumn('vectorWithDimensions', $column)->dimensions($dimensions);
+            }
+
+            if ($driver === 'singlestore') {
                 return $self->addColumn('vector', $column, ['length' => $dimensions]);
             }
 
@@ -61,20 +65,15 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
             \Illuminate\Database\Schema\Grammars\PostgresGrammar::class,
             \Illuminate\Database\Schema\Grammars\MySqlGrammar::class,
             \Illuminate\Database\Schema\Grammars\MariaDbGrammar::class,
+            \Illuminate\Database\Schema\Grammars\SqlServerGrammar::class,
         ];
 
         foreach ($grammars as $grammar) {
             if (class_exists($grammar)) {
-                $grammar::macro('typeVector', function ($column) {
-                    return "vector({$column->length})";
+                $grammar::macro('typeVectorWithDimensions', function ($column) {
+                    return "vector({$column->dimensions})";
                 });
             }
-        }
-
-        if (class_exists(\Illuminate\Database\Schema\Grammars\SqlServerGrammar::class)) {
-            \Illuminate\Database\Schema\Grammars\SqlServerGrammar::macro('typeVector', function ($column) {
-                return "vector({$column->length})";
-            });
         }
     }
 
