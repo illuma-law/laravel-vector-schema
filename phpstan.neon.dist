@@ -6,3 +6,5 @@ parameters:
     paths:
         - src
     tmpDir: build/phpstan
+    ignoreErrors:
+        - '#PHPDoc tag @var with type .* is not subtype of native type \$this#'

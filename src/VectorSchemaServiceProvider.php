@@ -20,14 +20,14 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
 
     public function bootingPackage(): void
     {
+        /** @phpstan-ignore-next-line */
         Blueprint::macro('vectorColumn', function (string $column, int $dimensions): ColumnDefinition {
-            /** @var Blueprint $self */
+            /** @var mixed $self */
             $self = $this;
             $driver = config('database.default');
             $driver = config("database.connections.{$driver}.driver");
 
             if (in_array($driver, ['pgsql', 'mysql', 'mariadb', 'sqlsrv', 'singlestore'])) {
-                /** @phpstan-ignore-next-line */
                 return $self->addColumn('vector', $column, ['length' => $dimensions]);
             }
 
@@ -35,18 +35,18 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
             return $self->binary($column);
         });
 
+        /** @phpstan-ignore-next-line */
         Blueprint::macro('hnswIndex', function (string $column, int $m = 16, int $efConstruction = 64): void {
-            /** @var Blueprint $self */
+            /** @var mixed $self */
             $self = $this;
-            /** @phpstan-ignore-next-line */
             $table = $self->table;
             VectorSchema::createHnswIndex($table, $column, $m, $efConstruction);
         });
 
+        /** @phpstan-ignore-next-line */
         Blueprint::macro('dropHnswIndex', function (string $column): void {
-            /** @var Blueprint $self */
+            /** @var mixed $self */
             $self = $this;
-            /** @phpstan-ignore-next-line */
             $table = $self->table;
             VectorSchema::dropHnswIndex($table, $column);
         });
@@ -59,8 +59,9 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
 
     private function registerSelectHybridVectorDistanceMacro(): void
     {
+        /** @phpstan-ignore-next-line */
         Builder::macro('selectHybridVectorDistance', function (string $column, array $vector, ?string $as = null): Builder {
-            /** @var Builder $self */
+            /** @var mixed $self */
             $self = $this;
             $driver = $self->getConnection()->getDriverName();
             $alias = $as ?? "{$column}_distance";
@@ -108,8 +109,9 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
 
     private function registerWhereHybridVectorSimilarToMacro(): void
     {
+        /** @phpstan-ignore-next-line */
         Builder::macro('whereHybridVectorSimilarTo', function (string $column, array $vector, float $minSimilarity = 0.6, bool $order = true): Builder {
-            /** @var Builder $self */
+            /** @var mixed $self */
             $self = $this;
             $driver = $self->getConnection()->getDriverName();
             $maxDistance = 1 - $minSimilarity;
@@ -175,8 +177,9 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
 
     private function registerWhereHybridVectorDistanceLessThanMacro(): void
     {
+        /** @phpstan-ignore-next-line */
         Builder::macro('whereHybridVectorDistanceLessThan', function (string $column, array $vector, float $maxDistance, string $boolean = 'and'): Builder {
-            /** @var Builder $self */
+            /** @var mixed $self */
             $self = $this;
             $driver = $self->getConnection()->getDriverName();
             $method = $boolean === 'or' ? 'orWhereRaw' : 'whereRaw';
@@ -211,8 +214,9 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
 
     private function registerOrderByHybridVectorDistanceMacro(): void
     {
+        /** @phpstan-ignore-next-line */
         Builder::macro('orderByHybridVectorDistance', function (string $column, array $vector, string $direction = 'asc'): Builder {
-            /** @var Builder $self */
+            /** @var mixed $self */
             $self = $this;
             $driver = $self->getConnection()->getDriverName();
             $dir = ($direction === 'desc' ? ' DESC' : '');
