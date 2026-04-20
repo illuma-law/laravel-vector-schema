@@ -10,8 +10,6 @@ it('calls createHnswIndex from macro', function () {
 
     $blueprint = new Blueprint($connection, 'test_table');
 
-    // We expect this to call VectorSchema::createHnswIndex which we already tested.
-    // Here we just want to cover the macro closure lines.
     $blueprint->hnswIndex('embedding');
 
     expect(true)->toBeTrue();

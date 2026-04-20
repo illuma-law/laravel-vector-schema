@@ -6,7 +6,7 @@ it('converts vector to blob', function () {
     $vector = [1.0, 2.0, 3.0];
     $blob = VectorHelper::toBlob($vector);
 
-    expect(strlen($blob))->toBe(12); // 3 * 4 bytes
+    expect(strlen($blob))->toBe(12);
 });
 
 it('converts blob to vector', function () {

@@ -62,7 +62,7 @@ it('can call hnswIndex macro', function () {
         $table->hnswIndex('embedding');
     });
 
-    expect(true)->toBeTrue(); // If no exception, it's fine (it doesn't do anything on sqlite)
+    expect(true)->toBeTrue();
 });
 
 it('can call dropHnswIndex macro', function () {

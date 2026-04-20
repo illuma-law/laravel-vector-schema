@@ -25,14 +25,13 @@ function getMockBuilder(string $driver)
     $connection->shouldReceive('getDriverName')->andReturn($driver);
     $connection->shouldReceive('getTablePrefix')->andReturn('');
     $connection->shouldReceive('raw')->andReturnUsing(fn ($value) => new Expression($value));
-    $connection->shouldReceive('addBinding'); // Allow any binding calls
-
+    $connection->shouldReceive('addBinding');
     $grammar = match ($driver) {
         'sqlite' => new SQLiteGrammar($connection),
         'mysql', 'mariadb', 'singlestore' => new MySqlGrammar($connection),
         'sqlsrv' => new SqlServerGrammar($connection),
-        'pgsql' => new PostgresGrammar($connection),
-        default => new Grammar($connection),
+        'pgsql'  => new PostgresGrammar($connection),
+        default  => new Grammar($connection),
     };
 
     $connection->shouldReceive('getQueryGrammar')->andReturn($grammar);
@@ -61,7 +60,7 @@ it('generates correct distance SQL for each driver', function (string $driver) {
         expect($sql)->toContain("VECTOR_DISTANCE('cosine', [embedding], ?)");
     } elseif ($driver === 'singlestore') {
         expect($sql)->toContain('1 - DOT_PRODUCT(`embedding`, JSON_ARRAY_PACK(?))');
-    } else { // pgsql
+    } else {
         expect($sql)->toContain('embedding <=> \'[0.1,0.2,0.3]\'::vector');
     }
 })->with('drivers');
@@ -90,7 +89,7 @@ it('generates correct similarity where SQL for each driver', function (string $d
     } elseif ($driver === 'singlestore') {
         expect($sql)->toContain('dot_product(`embedding`, json_array_pack(?)) >= ?');
         expect($sql)->toContain('order by dot_product(`embedding`, json_array_pack(?)) desc');
-    } else { // pgsql
+    } else {
         expect($sql)->toContain('embedding <=> \'[0.1,0.2,0.3]\'::vector <= ?');
         expect($sql)->toContain('order by embedding <=> \'[0.1,0.2,0.3]\'::vector');
     }
@@ -115,7 +114,7 @@ it('generates correct distance less than SQL for each driver', function (string 
         expect($sql)->toContain("vector_distance('cosine', [embedding], ?) < ?");
     } elseif ($driver === 'singlestore') {
         expect($sql)->toContain('1 - dot_product(`embedding`, json_array_pack(?)) < ?');
-    } else { // pgsql
+    } else {
         expect($sql)->toContain('embedding <=> \'[0.1,0.2,0.3]\'::vector < ?');
     }
 })->with('drivers');
@@ -139,7 +138,7 @@ it('generates correct order by distance SQL for each driver', function (string $
         expect($sql)->toContain("order by vector_distance('cosine', [embedding], ?) desc");
     } elseif ($driver === 'singlestore') {
         expect($sql)->toContain('order by dot_product(`embedding`, json_array_pack(?)) asc');
-    } else { // pgsql
+    } else {
         expect($sql)->toContain('order by embedding <=> \'[0.1,0.2,0.3]\'::vector desc');
     }
 })->with('drivers');

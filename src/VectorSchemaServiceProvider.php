@@ -40,7 +40,6 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
                 return $self->addColumn('vector', $column, ['length' => $dimensions]);
             }
 
-            // SQLite (sqlite-vec): store as BLOB for vec_f32
             return $self->binary($column);
         });
 
@@ -177,7 +176,6 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
             }
 
             if ($driver === 'singlestore') {
-                // Similarity directly from DOT_PRODUCT
                 $self->whereRaw("DOT_PRODUCT({$self->getGrammar()->wrap($column)}, JSON_ARRAY_PACK(?)) >= ?", [json_encode($vector), $minSimilarity]);
                 if ($order) {
                     $self->orderByRaw("DOT_PRODUCT({$self->getGrammar()->wrap($column)}, JSON_ARRAY_PACK(?)) DESC", [json_encode($vector)]);
@@ -186,8 +184,6 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
                 return $self;
             }
 
-            // pgvector uses distance operators directly. minSimilarity 0.6 => maxDistance 0.4.
-            // pgvector distance is squared Euclidean or Cosine distance. <=> is cosine distance.
             $vectorLiteral = '['.implode(',', $vector).']';
             $self->whereRaw("{$column} <=> '{$vectorLiteral}'::vector <= ?", [$maxDistance]);
             if ($order) {
@@ -261,7 +257,6 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
             }
 
             if ($driver === 'singlestore') {
-                // ASC distance means DESC dot_product (similarity)
                 $singlestoreDir = $direction === 'desc' ? ' ASC' : ' DESC';
 
                 return $self->orderByRaw("DOT_PRODUCT({$self->getGrammar()->wrap($column)}, JSON_ARRAY_PACK(?))".$singlestoreDir, [json_encode($vector)]);

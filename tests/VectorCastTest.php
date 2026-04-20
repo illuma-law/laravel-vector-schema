@@ -69,15 +69,12 @@ it('handles invalid json string in get', function () {
     $cast = new VectorArray;
     $model = new TestVectorModel;
 
-    // String looks like PG vector but is invalid JSON
     $result = $cast->get($model, 'embedding', '[1.0, invalid]', []);
     expect($result)->toBeNull();
 
-    // Standard invalid JSON
     $result = $cast->get($model, 'embedding', '{"invalid":}', []);
     expect($result)->toBeNull();
 
-    // Valid UTF-8 string that unpacks to "unreasonable" (tiny) floats
     $tiny = str_repeat("\x01", 16);
     $result = $cast->get($model, 'embedding', $tiny, []);
     expect($result)->toBeNull();
@@ -94,7 +91,6 @@ it('handles non-array json in get', function () {
 it('handles invalid blob length in get', function () {
     $cast = new VectorArray;
     $model = new TestVectorModel;
-    // Length not divisible by 4
     $result = $cast->get($model, 'embedding', 'abc', []);
 
     expect($result)->toBeNull();
