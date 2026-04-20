@@ -53,8 +53,10 @@ final class VectorSchema
 
     private static function driverName(): string
     {
-        return DB::getDefaultConnection() === 'sqlite_testing'
-            ? 'sqlite'
-            : DB::connection()->getDriverName();
+        $connection = DB::getDefaultConnection();
+        if (str_contains($connection, 'sqlite') || $connection === 'testing') {
+            return 'sqlite';
+        }
+        return DB::connection()->getDriverName();
     }
 }
