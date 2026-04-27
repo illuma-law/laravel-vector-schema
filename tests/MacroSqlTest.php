@@ -31,11 +31,11 @@ function getMockBuilder(string $driver)
     });
     $connection->shouldReceive('addBinding');
     $grammar = match ($driver) {
-        'sqlite'                          => new SQLiteGrammar($connection),
+        'sqlite' => new SQLiteGrammar($connection),
         'mysql', 'mariadb', 'singlestore' => new MySqlGrammar($connection),
-        'sqlsrv'                          => new SqlServerGrammar($connection),
-        'pgsql'                           => new PostgresGrammar($connection),
-        default                           => new Grammar($connection),
+        'sqlsrv' => new SqlServerGrammar($connection),
+        'pgsql' => new PostgresGrammar($connection),
+        default => new Grammar($connection),
     };
 
     $connection->shouldReceive('getQueryGrammar')->andReturn($grammar);
