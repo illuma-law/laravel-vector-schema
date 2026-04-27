@@ -76,9 +76,6 @@ class VectorArray implements CastsAttributes
     }
 
     /**
-     * @param  Model  $model
-     * @param  string  $key
-     * @param  mixed  $value
      * @param  array<string, mixed>  $attributes
      */
     public function set(Model $model, string $key, mixed $value, array $attributes): mixed

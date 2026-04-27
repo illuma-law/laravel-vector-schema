@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use IllumaLaw\VectorSchema\VectorHelper;
 
 it('converts vector to blob', function () {

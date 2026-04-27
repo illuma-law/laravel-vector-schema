@@ -1,11 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Database\Connection;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Schema\Grammars\PostgresGrammar;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Mockery\MockInterface;
 
 it('registers the vectorColumn macro on blueprint', function () {
     /** @var mixed $blueprintClass */
@@ -27,7 +30,7 @@ it('uses vectorWithDimensions type for pgsql, mysql, mariadb, sqlsrv', function 
     Config::set("database.connections.{$driver}.driver", $driver);
     Config::set("database.connections.{$driver}.database", 'test');
 
-    /** @var Connection&\Mockery\MockInterface $connection */
+    /** @var Connection&MockInterface $connection */
     $connection = Mockery::mock(Connection::class);
     $connection->shouldReceive('getDriverName')->andReturn($driver);
     $connection->shouldReceive('getSchemaGrammar')->andReturn(new PostgresGrammar($connection));
@@ -46,7 +49,7 @@ it('uses vector type for singlestore', function () {
     Config::set("database.connections.{$driver}.driver", $driver);
     Config::set("database.connections.{$driver}.database", 'test');
 
-    /** @var Connection&\Mockery\MockInterface $connection */
+    /** @var Connection&MockInterface $connection */
     $connection = Mockery::mock(Connection::class);
     $connection->shouldReceive('getDriverName')->andReturn($driver);
     $connection->shouldReceive('getSchemaGrammar')->andReturn(new PostgresGrammar($connection));

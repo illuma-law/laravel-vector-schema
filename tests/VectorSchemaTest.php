@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use IllumaLaw\VectorSchema\VectorSchema;
 use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\DB;

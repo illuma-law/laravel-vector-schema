@@ -52,11 +52,13 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
             if ($driver === 'singlestore') {
                 /** @var ColumnDefinition $res */
                 $res = $self->addColumn('vector', $column, ['length' => $dimensions]);
+
                 return $res;
             }
 
             /** @var ColumnDefinition $res */
             $res = $self->binary($column);
+
             return $res;
         });
 
@@ -145,6 +147,7 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
                 $res = $self->addSelect([
                     $self->raw("vec_distance_cosine({$grammar->wrap($column)}, ?) as {$grammar->wrap($alias)}"),
                 ]);
+
                 return $res;
             }
 
@@ -156,6 +159,7 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
                 $res = $self->addSelect([
                     $self->raw("VECTOR_DISTANCE({$grammar->wrap($column)}, STRING_TO_VECTOR(?), 'COSINE') as {$grammar->wrap($alias)}", [json_encode($vector)]),
                 ]);
+
                 return $res;
             }
 
@@ -167,6 +171,7 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
                 $res = $self->addSelect([
                     $self->raw("VEC_DISTANCE_COSINE({$grammar->wrap($column)}, VEC_FromText(?)) as {$grammar->wrap($alias)}", [json_encode($vector)]),
                 ]);
+
                 return $res;
             }
 
@@ -178,6 +183,7 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
                 $res = $self->addSelect([
                     $self->raw("VECTOR_DISTANCE('cosine', {$grammar->wrap($column)}, ?) as {$grammar->wrap($alias)}", [json_encode($vector)]),
                 ]);
+
                 return $res;
             }
 
@@ -189,6 +195,7 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
                 $res = $self->addSelect([
                     $self->raw("1 - DOT_PRODUCT({$grammar->wrap($column)}, JSON_ARRAY_PACK(?)) as {$grammar->wrap($alias)}", [json_encode($vector)]),
                 ]);
+
                 return $res;
             }
 
@@ -201,6 +208,7 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
             $res = $self->addSelect([
                 $self->raw("{$column} <=> '{$vectorLiteral}'::vector as {$grammar->wrap($alias)}"),
             ]);
+
             return $res;
         });
     }
@@ -308,30 +316,35 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
 
                 /** @var Builder $res */
                 $res = $self->{$method}("vec_distance_cosine({$grammar->wrap($column)}, ?) < ?", [$vectorBlob, $maxDistance]);
+
                 return $res;
             }
 
             if ($driver === 'mysql') {
                 /** @var Builder $res */
                 $res = $self->{$method}("VECTOR_DISTANCE({$grammar->wrap($column)}, STRING_TO_VECTOR(?), 'COSINE') < ?", [json_encode($vector), $maxDistance]);
+
                 return $res;
             }
 
             if ($driver === 'mariadb') {
                 /** @var Builder $res */
                 $res = $self->{$method}("VEC_DISTANCE_COSINE({$grammar->wrap($column)}, VEC_FromText(?)) < ?", [json_encode($vector), $maxDistance]);
+
                 return $res;
             }
 
             if ($driver === 'sqlsrv') {
                 /** @var Builder $res */
                 $res = $self->{$method}("VECTOR_DISTANCE('cosine', {$grammar->wrap($column)}, ?) < ?", [json_encode($vector), $maxDistance]);
+
                 return $res;
             }
 
             if ($driver === 'singlestore') {
                 /** @var Builder $res */
                 $res = $self->{$method}("1 - DOT_PRODUCT({$grammar->wrap($column)}, JSON_ARRAY_PACK(?)) < ?", [json_encode($vector), $maxDistance]);
+
                 return $res;
             }
 
@@ -339,6 +352,7 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
 
             /** @var Builder $res */
             $res = $self->{$method}("{$column} <=> '{$vectorLiteral}'::vector < ?", [$maxDistance]);
+
             return $res;
         });
     }
@@ -369,24 +383,28 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
 
                 /** @var Builder $res */
                 $res = $self->orderByRaw("vec_distance_cosine({$grammar->wrap($column)}, ?)".$dir, [$vectorBlob]);
+
                 return $res;
             }
 
             if ($driver === 'mysql') {
                 /** @var Builder $res */
                 $res = $self->orderByRaw("VECTOR_DISTANCE({$grammar->wrap($column)}, STRING_TO_VECTOR(?), 'COSINE')".$dir, [json_encode($vector)]);
+
                 return $res;
             }
 
             if ($driver === 'mariadb') {
                 /** @var Builder $res */
                 $res = $self->orderByRaw("VEC_DISTANCE_COSINE({$grammar->wrap($column)}, VEC_FromText(?))".$dir, [json_encode($vector)]);
+
                 return $res;
             }
 
             if ($driver === 'sqlsrv') {
                 /** @var Builder $res */
                 $res = $self->orderByRaw("VECTOR_DISTANCE('cosine', {$grammar->wrap($column)}, ?)".$dir, [json_encode($vector)]);
+
                 return $res;
             }
 
@@ -395,6 +413,7 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
 
                 /** @var Builder $res */
                 $res = $self->orderByRaw("DOT_PRODUCT({$grammar->wrap($column)}, JSON_ARRAY_PACK(?))".$singlestoreDir, [json_encode($vector)]);
+
                 return $res;
             }
 
@@ -402,6 +421,7 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
 
             /** @var Builder $res */
             $res = $self->orderByRaw("{$column} <=> '{$vectorLiteral}'::vector".$dir);
+
             return $res;
         });
     }
